@@ -1,37 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, ScrollView, KeyboardAvoidingView, Keyboard, Platform } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  KeyboardAvoidingView,
+  Keyboard,
+  Platform
+} from 'react-native';
 import MessageBubble from './MessageBubble';
 import InputBar from './InputBar';
-import { handleInput } from '../Order';
+import { handleInput } from '../Order.js';
 
-export default function ChatView(){
+export default function ChatView() {
   const [messages, setMessages] = useState([]);
   const [inputBarText, setInputBarText] = useState('');
   const scrollViewRef = useRef(null);
 
-  // Scroll to bottom helper
-  const scrollToBottom = (animated = true) => {
-    // Small timeout ensures the layout has calculated before scrolling
+  const scrollToBottom = () => {
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated });
+      scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   };
 
   useEffect(() => {
-    // Setup keyboard listeners
-    const showSubscription = Keyboard.addListener('keyboardDidShow', () => scrollToBottom());
-    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => scrollToBottom());
-
-    // Initial scroll
-    scrollToBottom(false);
+    const showSub = Keyboard.addListener('keyboardDidShow', scrollToBottom);
+    const hideSub = Keyboard.addListener('keyboardDidHide', scrollToBottom);
 
     return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
+      showSub.remove();
+      hideSub.remove();
     };
   }, []);
 
-  // Scroll whenever messages update
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -39,61 +39,60 @@ export default function ChatView(){
   const sendMessage = () => {
     if (inputBarText.trim().length === 0) return;
 
-    // Correct way to update state: create a NEW array
     let newMessages = [{ direction: 'right', text: inputBarText }];
-    const aResponse = handleInput(inputBarText);
-    for(const message of aResponse){
-      newMessages.push({direction: "left", text: message});
+    const botResponses = handleInput(inputBarText);
+
+    for (const msg of botResponses) {
+      newMessages.push({ direction: 'left', text: msg });
     }
-    setMessages([...messages, ...newMessages]);
+
+    setMessages((prev) => [...prev, ...newMessages]);
     setInputBarText('');
   };
 
   return (
-    <View style={styles.outer}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-        style={{ flex: 1 }}
-      >
-        <ScrollView 
-          ref={scrollViewRef} 
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.container}
+    >
+      <View style={styles.inner}>
+
+        <ScrollView
+          ref={scrollViewRef}
           style={styles.messages}
-          onContentSizeChange={() => scrollToBottom()} // Auto-scrolls when new content arrives
+          contentContainerStyle={{ padding: 10 }}
         >
           {messages.map((msg, index) => (
-            <MessageBubble 
-              key={index} 
-              direction={msg.direction} 
-              text={msg.text} 
+            <MessageBubble
+              key={index}
+              direction={msg.direction}
+              text={msg.text}
             />
           ))}
         </ScrollView>
 
-        <InputBar 
-          onSendPressed={sendMessage} 
-          onSizeChange={() => scrollToBottom(false)}
+        <InputBar
+          onSendPressed={sendMessage}
           onChangeText={setInputBarText}
           text={inputBarText}
         />
-      </KeyboardAvoidingView>
-    </View>
+
+      </View>
+    </KeyboardAvoidingView>
   );
-};
+}
 
-//TODO: separate these out. This is what happens when you're in a hurry!
 const styles = StyleSheet.create({
-
-  //ChatView
-
-  outer: {
+  container: {
     flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    backgroundColor: 'white'
+  },
+
+  inner: {
+    flex: 1,
   },
 
   messages: {
-    flex: 1
+    flex: 1,
   },
-
-})
+  
+});
