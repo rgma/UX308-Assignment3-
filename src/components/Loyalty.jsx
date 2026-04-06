@@ -65,9 +65,9 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 24,
+    fontSize: 50,
     textAlign: 'center',
-    marginTop: 40
+    marginTop: 50
   },
 
   points: {
